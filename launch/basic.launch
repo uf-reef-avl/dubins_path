@@ -1,0 +1,22 @@
+<launch>
+
+    <arg name="name"  default="kiwi" />
+    <arg name="waypoints_file" default="$(find dubins_path)/waypoint_files/basic_waypoints.yaml"/>
+    <rosparam command="load" file="$(find dubins_path)/param/basic_param.yaml"/>
+
+    <node name="setpoint_publisher" pkg="dubins_path" type="get_setpoint_node.py" clear_params="true" output = "screen">
+        <rosparam file="$(arg waypoints_file)" />
+	    <remap from="velocity_publisher" to="/mobile_base/commands/velocity"/>
+    </node>
+
+    <node pkg="ros_vrpn_client" name="$(arg name)" type="ros_vrpn_client" args="_vrpn_server_ip:=192.168.1.104" required="true" >
+      <remap from="$(arg name)/ned/pose" to="pose"/>
+    </node>
+
+		
+	<include file = "$(find turtlebot_bringup)/launch/minimal.launch" >
+	</include>
+
+
+
+</launch>

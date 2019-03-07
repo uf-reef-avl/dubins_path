@@ -1,0 +1,43 @@
+<launch>
+
+    <arg name="record_topic" default="true"/>
+    <arg name="bag_name" default="RGBD_POSE_BAG"/> <!-- required parameter - name of the bag file that will be recorded -->
+
+
+    <arg name="name"  default="turtle" />
+    <arg name="waypoints_file" default="$(find dubins_path)/waypoint_files/basic_waypoints.yaml" />
+
+    <rosparam command="load" file="$(find dubins_path)/param/basic_param.yaml"/>
+
+    <node name="setpoint_publisher" pkg="dubins_path" type="get_setpoint_node.py" clear_params="true" output = "screen">
+        <rosparam file="$(arg waypoints_file)" />
+	<remap from="velocity_publisher" to="/mobile_base/commands/velocity"/>
+    </node>
+
+    <node pkg="ros_vrpn_client" name="$(arg name)" type="ros_vrpn_client" args="_vrpn_server_ip:=192.168.1.104" required="true" >
+      <remap from="$(arg name)/ned/pose" to="pose"/>
+	<remap from="$(arg name)/ned/pose" to="pose"/>
+    </node>
+
+		
+	<include file = "$(find turtlebot_bringup)/launch/minimal.launch" >
+	</include>
+	<include file = "$(find uncc_rgbd_odom)/launch/rgbd_odometry.launch" >
+	</include>
+	<group ns = "MOCAP">
+	<include file = "$(find position_to_velocity)/launch/basic.launch">\	 
+	<arg name="topic_remap" value="/pose" />
+         <arg name="node_name" value="MOCAP_pose_to_velocity_node" />
+	</include>
+	</group>
+	<group ns = "RGBD">
+	<include file = "$(find position_to_velocity)/launch/basic.launch">
+	 <arg name="topic_remap" value="/camera/pose_w_cov" />
+         <arg name="node_name" value="RGBD_pose_to_velocity_node" />
+	</include>
+	</group>
+
+	 <node if="$(arg record_topic)" name="record" pkg="rosbag" type="record" args="-O $(arg bag_name) /pose camera/pose_w_cov camera/odom_w_cov MOCAP/velocity/body_frame MOCAP/velocity/inertial_frame RGBD/velocity/body_frame " output="screen"/>
+
+
+</launch>

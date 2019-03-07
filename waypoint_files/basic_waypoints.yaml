@@ -1,0 +1,65 @@
+#!!!!! Make sure all the value are float value !!!!!!!!!!!
+
+#setpoint dictionary
+# a setpoint dictionary consists of a setpoint position [x,y,z] in meters (NED frame),
+# a yaw angle in degrees and a sens of rotation "clockwise" (clockwise = 0; counterclockwise = 1) around the setpoint
+waypoint_list:
+  [
+    {position: [-0.8, -1.5,-1.], yaw_degrees: -90, clockwise: 1},
+    {position: [0.8, -1.5,-1.], yaw_degrees: -90, clockwise: 0},
+    {position: [-0.8,1.5 , -1.], yaw_degrees: -90, clockwise: 1},
+    {position: [0.8,1.5, -1.], yaw_degrees: -90, clockwise: 0}
+  ]
+
+# how close is "close enough" for the setpoint position
+# imagine a circle around a setpoint with a radius equal to this value
+# if the origin of the vehicle's coordinate frame enters this circle,
+# the vehicle is considered to have hit the setpoint
+# unit is meters
+setpoint_radius_tolerance: 0.5
+
+#this attribute varie from 0 to 1 and set the radius tolerance of the tangent point (entry and end) respectively to the setpoint radius size previously specified
+proportional_tangent_point_radius_tolerance: 0.5
+
+# fly to each setpoint in waypoint_list this many times
+# e.g. if this value is set to 2, the vehicle will fly to each setpoint in
+# waypoint_list and then do it again
+number_of_cycles: 2
+
+use_mocap: true
+
+#Depending on the type of robot, the command can be sent in the NED (quad) or NWU (turtlebot) frame
+#set this value to NED or NWU and make sure that the mocap PoseStamped message are set to NED
+robot_command_orientation: NED
+
+#if the frame is in NED, write a negative altitude
+altitude: -1.0
+
+#if this parameter is set to true, the dubins path won't be launched until this parameter is set to false. In the other hand, the dubin's path will be launched directly
+starting_activation: true
+
+
+#As the moving point is moving along the computed dubins path, the following parameters are used to control the velocity of this point and therefore the robot's velocity
+#Set the distance in meters between each point of the dubins path trajectory.
+distance_between_point: 0.05
+#Set the rate update of the moving point in Hz. So if the distance between each point = 0.05 , and the update rate is 8.5 Hw then the maximum velocity of the robot will be 0.05*8.5 = 0.425 m/s
+path_rate: 8.5
+#the parameter below multiply the number of point on the circular trajectories around the setpoint in order to slow down the robot during them
+circular_velocity_ratio: 1.5
+
+#Specify the radius in meters of the robot's projected area
+robot_radius: 0.25
+
+#Maximale linear velocity possibly applied to the robot
+VMax: 1.
+#Minimale linear velocity applied to the robot
+VMin: 0.1
+#Maximale angular velocity possibly applied
+PhiMax: 0.8
+
+#Gains of the controller on x
+Kx: 1.
+#Gains of the controlller on y
+Ky: 1.
+#Gains of the controller on  theta
+Ktheta: 1.
