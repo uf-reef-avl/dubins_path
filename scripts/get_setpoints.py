@@ -127,6 +127,7 @@ class dubins_velocity_publisher():
 	#this function publishs the velocities messages and controles the path evolution and the gains
 	def spin(self):
 		#don t spin before the initialisation is finished
+		self.not_activated = rospy.get_param("~activation")
 		if self.initialisation or self.not_activated:
 			self.count = 0
 			self.pose_valid = True
