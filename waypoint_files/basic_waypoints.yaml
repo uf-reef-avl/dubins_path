@@ -63,3 +63,5 @@ Kx: 1.
 Ky: 1.
 #Gains of the controller on  theta
 Ktheta: 1.
+
+initial_yaw: 0.
