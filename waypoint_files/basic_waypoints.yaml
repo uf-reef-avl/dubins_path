@@ -27,7 +27,7 @@ proportional_tangent_point_radius_tolerance: 0.5
 number_of_cycles: 2
 
 use_mocap: true
-
+initial_yaw: 1.0
 #Depending on the type of robot, the command can be sent in the NED (quad) or NWU (turtlebot) frame
 #set this value to NED or NWU and make sure that the mocap PoseStamped message are set to NED
 robot_command_orientation: NED
@@ -36,7 +36,7 @@ robot_command_orientation: NED
 altitude: -1.0
 
 #if this parameter is set to true, the dubins path won't be launched until this parameter is set to false. In the other hand, the dubin's path will be launched directly
-starting_activation: true
+activation: false
 
 
 #As the moving point is moving along the computed dubins path, the following parameters are used to control the velocity of this point and therefore the robot's velocity
@@ -63,5 +63,3 @@ Kx: 1.
 Ky: 1.
 #Gains of the controller on  theta
 Ktheta: 1.
-
-initial_yaw: 0.

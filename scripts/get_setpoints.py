@@ -5,7 +5,6 @@ import tf
 import math
 import numpy as np
 from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import TransformStamped
 from rosflight_msgs.msg import RCRaw
@@ -27,15 +26,15 @@ class dubins_velocity_publisher():
 		# the publishers below are used for debugging the application
 		self.gains_pub = rospy.Publisher("gains_publisher", Twist, queue_size=10)
 		self.path_pub = rospy.Publisher("path_publisher", PoseStamped, queue_size=10)
-		# the publishers below are useful to send some commands to the turtlebot
-		self.velocity_stamped_pub = rospy.Publisher("velocity_stamped_publisher", TwistStamped, queue_size=10)
-		#the publishers below are useful to send some commands to the quad
+		# the publishers below are used to send commands to the turtlebot
+		self.velocity_pub = rospy.Publisher("velocity_publisher", Twist, queue_size=10)
+		#the publishers below are used to send commands to the quad
 		self.quad_desired_state_pub = rospy.Publisher("desired_state", DesiredState, queue_size=10)
 
-		#two mocap subscribers are availables in order to get the informations from the rosvrpn (message types = PoseStamped and  TransformStamped)
-		rospy.Subscriber("pose_stamped", PoseStamped, self.mocap_pose_callback)
-		rospy.Subscriber("pose", TransformStamped, self.mocap_transform_callback)
-		rospy.Subscriber("rc_raw",RCRaw,self.rc_raw_callback)
+		#theses parameters set the VMax, Vmin (minmum and maximum linear velocity) and PhiMax (maximum angular velocity) of the robot
+		self.VMax = rospy.get_param("~VMax")
+		self.VMin = rospy.get_param("~VMin")
+		self.PhiMax = rospy.get_param("~PhiMax")
 
 		self.initial_yaw = rospy.get_param("~initial_yaw")
 		#the differents setpoints are retrieved in this variable
@@ -43,17 +42,17 @@ class dubins_velocity_publisher():
 
 		#if the user wants to reproduce the dubins path multiple times, he can set a number of cycle
 		num_cycles = rospy.get_param("~number_of_cycles")
+		num_cycles = int(num_cycles)
 		if type(num_cycles) == int and num_cycles > 0:
-			self.waypoint_list *= rospy.get_param("~number_of_cycles")
+			self.waypoint_list *= num_cycles
 
+		#initialisation of the first state: this is the first set_point, the robot is not in a transition state (from straight to circular or from circular to straight)
+		self.waypoint_index = 0
+		self.setpoint_msg, self.setpoint_direction = self.pose_msg_from_dict(self.waypoint_list[self.waypoint_index])
+		self.initial_straight_velocity = self.VMin
 
 		#these parameters set the radius that the robot has to perform around each setpoint and the delimitation of the setpoint in space
 		self.setpoint_radius_tolerance = rospy.get_param("~setpoint_radius_tolerance")
-
-		#theses parameters set the VMax, Vmin (minmum and maximum linear velocity) and PhiMax (maximum angular velocity) of the robot
-		self.VMax = rospy.get_param("~VMax")
-		self.VMin = rospy.get_param("~VMin")
-		self.PhiMax = rospy.get_param("~PhiMax")
 
 		# theses parameters set the gains (in x,y,theta)of the robot
 		self.Kx = rospy.get_param("~Kx")
@@ -92,17 +91,15 @@ class dubins_velocity_publisher():
 		#initialisation of the published messages
 		self.path_pose = PoseStamped()
 		self.gains = Twist()
-		self.setvelocity_msg = TwistStamped()
-		self.setvelocity_msg.header.stamp = rospy.Time.now()
-		self.setvelocity_msg.twist.linear.x = 0
-		self.setvelocity_msg.twist.angular.z = 0
+		self.setvelocity_msg = Twist()
+		self.setvelocity_msg.linear.x = 0
+		self.setvelocity_msg.linear.y = 0
+		self.setvelocity_msg.linear.z = 0
+		self.setvelocity_msg.angular.x = 0
+		self.setvelocity_msg.angular.y = 0
+		self.setvelocity_msg.angular.z = 0
 		self.quad_desired_state_msg = DesiredState()
 		self.quad_desired_state_msg.velocity_valid = True
-
-		#initialisation of the first state: this is the first set_point, the robot is not in a transition state (from straight to circular or from circular to straight)
-		self.waypoint_index = 0
-		self.setpoint_msg, self.setpoint_direction = self.pose_msg_from_dict(self.waypoint_list[self.waypoint_index])
-		self.initial_straight_velocity = self.VMin
 
 		# initialisation of the end point of the setpoint
 		if len(self.waypoint_list) > 1 :
@@ -122,11 +119,15 @@ class dubins_velocity_publisher():
 																				   self.setpoint_msg.pose.position.y,
 																				   self.setpoint_radius_tolerance)
 
+		#two mocap subscribers are availables in order to get the informations from the rosvrpn (message types = PoseStamped and  TransformStamped)
+		rospy.Subscriber("pose_stamped", PoseStamped, self.mocap_pose_callback)
+		rospy.Subscriber("pose", TransformStamped, self.mocap_transform_callback)
+		rospy.Subscriber("rc_raw",RCRaw,self.rc_raw_callback)
 
 
 	#this function publishs the velocities messages and controles the path evolution and the gains
 	def spin(self):
-		#don t spin before the initialisation is finished
+		#don't spin before the initialisation is finished
 		self.not_activated = rospy.get_param("~activation")
 		if self.initialisation or self.not_activated:
 			self.count = 0
@@ -168,14 +169,13 @@ class dubins_velocity_publisher():
 
 
 				#all the velocities messages published are set below
-				self.setvelocity_msg.header.stamp = rospy.Time.now()
 
 				self.pose_valid = False
 				self.velocity_valid = True
-				self.quad_desired_state_msg.velocity.x = self.setvelocity_msg.twist.linear.x
-				self.quad_desired_state_msg.velocity.yaw = self.setvelocity_msg.twist.angular.z
+				self.quad_desired_state_msg.velocity.x = self.setvelocity_msg.linear.x
+				self.quad_desired_state_msg.velocity.yaw = self.setvelocity_msg.angular.z
 
-				self.velocity_stamped_pub.publish(self.setvelocity_msg)
+				self.velocity_pub.publish(self.setvelocity_msg)
 
 				# For debugging, we publish the current gains and the current path position
 				self.gains.linear.x = self.Kx
@@ -216,7 +216,7 @@ class dubins_velocity_publisher():
 		else:
 			self.not_activated = True
 
-	#this function retrieve the information of one setpoint from setpoint dictionary and change their format to PoseStamped message. It also send back the rotating direction for every setpoint
+	#this function retrieves the information of one setpoint from setpoint dictionary and changes their format to a PoseStamped message. It also sends back the rotating direction for every setpoint.
 	def pose_msg_from_dict(self,setpoint_dict):
 		pose_msg = PoseStamped()
 		euler_xyz = [0,0,np.deg2rad(setpoint_dict["yaw_degrees"])]
@@ -320,8 +320,8 @@ class dubins_velocity_publisher():
 			#the end point isn t available until the robot has performed half of his angular path
 			self.end_point_available = False
 			#we register the previous velocity at the transition (from straight to circular state) in order to have a smoother acceleration
-			self.initial_straight_velocity = self.setvelocity_msg.twist.linear.x
-			self.initial_angular_velocity = self.setvelocity_msg.twist.angular.z
+			self.initial_straight_velocity = self.setvelocity_msg.linear.x
+			self.initial_angular_velocity = self.setvelocity_msg.angular.z
 
 
 		# when the robot reach the entry point of a setpoint and change his state to a straight state
@@ -332,8 +332,8 @@ class dubins_velocity_publisher():
 				self.STATE = "straight"
 				self.entry_point_available = False
 				# we register the previous velocity at the transition (from circular to straight) in order to have a smoother acceleration
-				self.initial_straight_velocity = self.setvelocity_msg.twist.linear.x
-				self.initial_angular_velocity = self.setvelocity_msg.twist.angular.z
+				self.initial_straight_velocity = self.setvelocity_msg.linear.x
+				self.initial_angular_velocity = self.setvelocity_msg.angular.z
 				self.dist_to_tangent_point = dist_to_entry_point
 
 				#if there is still some setpoint left
@@ -401,30 +401,30 @@ class dubins_velocity_publisher():
 		#if the computed angular velocity is too high or too low then set the angular velocity to PhiMax or -PhiMax
 		#the angular velocity is computed in NED frame !!!!!!!!!
 		if angular_velocity > self.PhiMax :
-			self.setvelocity_msg.twist.angular.z = self.robot_command_orientation * self.PhiMax
+			self.setvelocity_msg.angular.z = self.robot_command_orientation * self.PhiMax
 		elif angular_velocity < -self.PhiMax:
-			self.setvelocity_msg.twist.angular.z = self.robot_command_orientation*(-self.PhiMax)
+			self.setvelocity_msg.angular.z = self.robot_command_orientation*(-self.PhiMax)
 		else:
-			self.setvelocity_msg.twist.angular.z = self.robot_command_orientation * angular_velocity
+			self.setvelocity_msg.angular.z = self.robot_command_orientation * angular_velocity
 
 		# if the computed linear velocity is too high or too low then set the linear velocity to VMax or Vmin
 		if linear_velocity < self.VMin:
-			self.setvelocity_msg.twist.linear.x = self.VMin
+			self.setvelocity_msg.linear.x = self.VMin
 		elif linear_velocity > self.VMax:
-			self.setvelocity_msg.twist.linear.x = self.VMax
+			self.setvelocity_msg.linear.x = self.VMax
 		else:
-			self.setvelocity_msg.twist.linear.x = linear_velocity
+			self.setvelocity_msg.linear.x = linear_velocity
 
 
-	#This function compute the tangent entry point of a setpoint relatively to the current position of the robot and his rotating direction around the setpoint
-	def compute_tangent_setpoint_entry_point(self,in_out, current_x,current_y,setpoint_x, setpoint_y, R):
+	#This function computes the tangent entry point of a setpoint relatively to the current position of the robot and his rotating direction around the setpoint
+	def compute_tangent_setpoint_entry_point(self,in_out, setpoint_x,setpoint_y,current_x, current_y, R):
 		#computation of distance between the current position and center of the setpoint
-		dist_from_setpoint = math.sqrt(math.pow(current_x - setpoint_x, 2) + math.pow(current_y - setpoint_y, 2))
+		dist_from_setpoint = math.sqrt(math.pow(setpoint_x - current_x, 2) + math.pow(setpoint_y - current_y, 2))
 		#computation of distance between the current position and the tangents point
 		r1 = math.sqrt(math.pow(dist_from_setpoint, 2) - math.pow(R, 2))
 		#computation of the pose of the 2 tangents points thanks to the intersection between the setpoint circle and the circle with a radius of the previous computed distance
-		pe1, pe2 = self.circle_intersection(current_x, current_y , r1 , setpoint_x, setpoint_y, R)
-		#there is 2 solutions to the circle intersection, we choose the right thanks to the rotating direction around the setpoint
+		pe1, pe2 = self.circle_intersection(setpoint_x, setpoint_y , r1 , current_x, current_y, R)
+		#there is 2 solutions to the circle intersection, we choose the one based on the rotating direction around the setpoint
 		if in_out == 1:
 			pe = pe1
 		elif in_out == 0:
