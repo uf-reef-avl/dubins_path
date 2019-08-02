@@ -6,7 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
         roscpp
         rospy
         std_msgs
-        rosflight
+        rosflight_msgs
         reef_msgs
         )
 
