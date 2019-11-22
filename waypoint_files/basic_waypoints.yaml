@@ -8,7 +8,8 @@ waypoint_list:
     {position: [-0.8, -1.5,-1.], yaw_degrees: -90, clockwise: 1},
     {position: [0.8, -1.5,-1.], yaw_degrees: -90, clockwise: 0},
     {position: [-0.8,1.5 , -1.], yaw_degrees: -90, clockwise: 1},
-    {position: [0.8,1.5, -1.], yaw_degrees: -90, clockwise: 0}
+    {position: [0.8,1.5, -1.], yaw_degrees: -90, clockwise: 0},
+    {position: [0.0,0.0, -1.], yaw_degrees: -90, clockwise: 0}
     {position: [0.,0, 0.0], yaw_degrees: -90, clockwise: 0}
   ]
 
