@@ -13,22 +13,20 @@ This package is used to apply dubins path trajectories to a robot. It takes as a
 
 3. [Usage](#Usage)
 
-4. [ROS Topics and Messages](#ROS Topics and Messages)
-
 
 <a name="Installation"/>
 ## Installation
 
 To install it, clone the Dubins_path_test remote repository into your computer.
 
-        git clone http://192.168.1.101/AVL-Summer-18/dubins_path_test
+        git clone https://github.com/uf-reef-avl/dubins_path
 
 <a name="Dependencies"/>
 ## Dependencies
 
-This package depends mainly upon **rosvrpn** to retrieve the mocap position data from the robot. 
+This package depends mainly upon **reef_msgs** to retrieve the mocap position data from the robot. 
 
-        git clone http://192.168.1.101/Pathfinder5/ros_vrpn_client
+        git clone https://github.com/uf-reef-avl/reef_msgs
  
 As this pack can be used either on quad or on turtlebot by remapping the topics, the user can also install the [kobuki packages](http://wiki.ros.org/kobuki/Tutorials/Installation)
  if he wants to use it directly on turtlebot. If he wants to use it on quad, this pack depends upon the [reef_teleop package](http://192.168.1.101/AVL-Summer-18/reef_teleop) or the [relative nav packages](http://192.168.1.101/AVL-Summer-18/relative_nav). 
@@ -37,7 +35,7 @@ As this pack can be used either on quad or on turtlebot by remapping the topics,
  <a name="Usage"/>
 ## Usage
 
-Dubins Path Test should be executed as a node using a ROS launchfile and paired with a rosvrpn node. Then the **rosvrpn position topic** and the **dubins path published velocity topic** should be remapped to match the dubins path's subscriber "pose" and the dubins path's publisher "velocity publisher". For example,
+Dubins Path should be executed as a node using a ROS launchfile and paired with a rosvrpn or Gazebo node. Then the **rosvrpn position topic** and the **dubins path published velocity topic** should be remapped to match the dubins path's subscriber "pose" and the dubins path's publisher "velocity publisher". For example,
         
 ```xml
  <node pkg="ros_vrpn_client" name="vrpn_node" type="ros_vrpn_client" args="_vrpn_server_ip:=192.168.1.104" required="true" >
