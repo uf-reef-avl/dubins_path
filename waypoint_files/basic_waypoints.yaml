@@ -9,6 +9,7 @@ waypoint_list:
     {position: [0.8, -1.5,-1.], yaw_degrees: -90, clockwise: 0},
     {position: [-0.8,1.5 , -1.], yaw_degrees: -90, clockwise: 1},
     {position: [0.8,1.5, -1.], yaw_degrees: -90, clockwise: 0}
+    {position: [0.,0, 0.0], yaw_degrees: -90, clockwise: 0}
   ]
 
 # how close is "close enough" for the setpoint position
@@ -24,7 +25,7 @@ proportional_tangent_point_radius_tolerance: 0.5
 # fly to each setpoint in waypoint_list this many times
 # e.g. if this value is set to 2, the vehicle will fly to each setpoint in
 # waypoint_list and then do it again
-number_of_cycles: 2
+number_of_cycles: 1
 
 use_mocap: true
 initial_yaw: 1.0
@@ -36,7 +37,7 @@ robot_command_orientation: NED
 altitude: -1.0
 
 #if this parameter is set to true, the dubins path won't be launched until this parameter is set to false. In the other hand, the dubin's path will be launched directly
-activation: false
+activation: true
 
 
 #As the moving point is moving along the computed dubins path, the following parameters are used to control the velocity of this point and therefore the robot's velocity
