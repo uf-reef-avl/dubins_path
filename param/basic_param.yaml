@@ -1,1 +1,2 @@
 use_mocap: true
+use_optimized: false

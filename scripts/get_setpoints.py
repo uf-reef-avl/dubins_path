@@ -122,6 +122,7 @@ class dubins_velocity_publisher():
 		#two mocap subscribers are availables in order to get the informations from the rosvrpn (message types = PoseStamped and  TransformStamped)
 		rospy.Subscriber("pose_stamped", PoseStamped, self.mocap_pose_callback)
 		rospy.Subscriber("pose", TransformStamped, self.mocap_transform_callback)
+		rospy.Subscriber("global_optimized_state", PoseStamped, self.opt_callback)
 		rospy.Subscriber("rc_raw",RCRaw,self.rc_raw_callback)
 
 
@@ -195,20 +196,31 @@ class dubins_velocity_publisher():
 
 	#handler of the mocap PoseStamped message
 	def mocap_pose_callback(self, mocap_pose_msg):
-		self.change_setpoint(mocap_pose_msg)
+		self.opt_flag = rospy.get_param("/use_optimized")
+		if not(self.opt_flag):
+			self.change_setpoint(mocap_pose_msg)
 
 	# handler of the mocap TransformStamped message
 	def mocap_transform_callback(self, mocap_transform_msg):
 	#we want to use only PoseStamped message so we transform the TransforStamped message to some PoseStamped message
-		mocap_pose_msg = PoseStamped()
-		mocap_pose_msg.pose.position.x = mocap_transform_msg.transform.translation.x
-		mocap_pose_msg.pose.position.y = mocap_transform_msg.transform.translation.y
-		mocap_pose_msg.pose.position.z = mocap_transform_msg.transform.translation.z
-		mocap_pose_msg.pose.orientation.x = mocap_transform_msg.transform.rotation.x
-		mocap_pose_msg.pose.orientation.y = mocap_transform_msg.transform.rotation.y
-		mocap_pose_msg.pose.orientation.z = mocap_transform_msg.transform.rotation.z
-		mocap_pose_msg.pose.orientation.w = mocap_transform_msg.transform.rotation.w
-		self.change_setpoint(mocap_pose_msg)
+		self.opt_flag = rospy.get_param("/use_optimized")
+		if not(self.opt_flag):
+			mocap_pose_msg = PoseStamped()
+			mocap_pose_msg.pose.position.x = mocap_transform_msg.transform.translation.x
+			mocap_pose_msg.pose.position.y = mocap_transform_msg.transform.translation.y
+			mocap_pose_msg.pose.position.z = mocap_transform_msg.transform.translation.z
+			mocap_pose_msg.pose.orientation.x = mocap_transform_msg.transform.rotation.x
+			mocap_pose_msg.pose.orientation.y = mocap_transform_msg.transform.rotation.y
+			mocap_pose_msg.pose.orientation.z = mocap_transform_msg.transform.rotation.z
+			mocap_pose_msg.pose.orientation.w = mocap_transform_msg.transform.rotation.w
+			self.change_setpoint(mocap_pose_msg)
+
+	def opt_callback(self,opt_msg):
+		self.opt_flag = rospy.get_param("/use_optimized")
+		if self.opt_flag:
+			self.change_setpoint(opt_msg)
+
+
 
 	def rc_raw_callback(self, rc_msg):
 		if rc_msg.values[6] > 1500:
